@@ -392,6 +392,9 @@
 				})
 				.checked_( true ),
 				MenuAction.separator,
+				MenuAction( "Reset lates", { item.lates = nil }),
+				MenuAction( "Plot time offsets...", { item.recvOffsets !? _.plot }),
+				MenuAction.separator,
 				Menu(
 					MenuAction( "To top", {
 						var pr;
@@ -481,19 +484,20 @@
 		views[ \peers ].do({ |vws, i|
 			var peer;
 			peer = evt.knownPeers[i];
-				if( peer !? _.active ? false == true ) {
-					vws[ \txt ].string = " % (%) % rtt: %ms".format(
-						peer.peer.user.name,
-						peer.peer.user.id,
-						peer.metadata ? "",
-						peer.maxRTT !? (_ * 1000).round(0.1) ? "-"
-					);
-					vws[ \txt ].stringColor = Color.black;
-					vws.setRemoveEnabled( false );
-				} {
-					vws[ \txt ].stringColor = Color.red;
-					vws.setRemoveEnabled( true );
-				};
+			if( peer !? _.active ? false == true ) {
+				vws[ \txt ].string = " % (%) % rtt: %ms, late: %".format(
+					peer.peer.user.name,
+					peer.peer.user.id,
+					peer.metadata ? "",
+					peer.maxRTT !? (_ * 1000).round(0.1) ? "-",
+					peer.lates ? "-"
+				);
+				vws[ \txt ].stringColor = Color.black;
+				vws.setRemoveEnabled( false );
+			} {
+				vws[ \txt ].stringColor = Color.red;
+				vws.setRemoveEnabled( true );
+			};
 		});
 	};
 
