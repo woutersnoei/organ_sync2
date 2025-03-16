@@ -361,11 +361,11 @@
 				(item.peer.user.name.hash % 2048).linlin( 0,2048, 0.0, 1.0 ), 0.1, 0.7 )
 			)
 			.string_( " % (%)".format( item.peer.user.name, item.peer.user.id ) );
-			vws[ \send ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 40, 0, 20, 20 ) )
+			vws[ \send ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 20, 0, 20, 20 ) )
 			.resize_(6)
 			.string_( "s" )
 			.align_( \center );
-			vws[ \receive ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 20, 0, 20, 20 ) )
+			vws[ \receive ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 40, 0, 20, 20 ) )
 			.resize_(6)
 			.string_( "r" )
 			.align_( \center );
