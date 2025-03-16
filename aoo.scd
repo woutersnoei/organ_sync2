@@ -166,6 +166,8 @@
 		if( peer.isNil ) { "user '%' not found, sent to all instead\n".postf( str ); }
 	};
 
+	evt.client.sendMsg( peer, time ? 0.0, msg, reliable );
+
 	if( peer.isNil ) {
 		evt.knownPeers.select({ |item| item.active == true }).do({ |item|
 			item.sent_( true ).changed( \sent );
