@@ -11,6 +11,8 @@
 
 ~aoo.port = 9995;
 
+~aoo.verbose = true;
+
 ~aoo.connect = { |evt, action, freeFirst = true|
 	if( evt.userName.size > 0 ) {
 		s.waitForBoot({
@@ -85,7 +87,10 @@
 		knownPeer.received_( true ).changed( \received );
 		timeOffset = (time - Process.elapsedTime) + (knownPeer.latency ? 0);
 		knownPeer.recvOffsets = knownPeer.recvOffsets.add( timeOffset );
-		if( timeOffset < 0 ) { knownPeer.lates = (knownPeer.lates ? 0) + 1 };
+		if( timeOffset < 0 ) {
+			knownPeer.lates = (knownPeer.lates ? 0) + 1;
+			if( evt.verbose == true ) { "late: %, %\n".postf( timeOffset, obj ) };
+		};
 		if( knownPeer.recvOffsets.size > 1024 ) {
 			knownPeer.recvOffsets = knownPeer.recvOffsets[ knownPeer.recvOffsets.size - 1024 ..];
 		};
