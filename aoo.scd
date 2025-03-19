@@ -43,7 +43,7 @@
 							} {
 								evt.changed( \disconnected );
 							};
-						} );
+						}, userMetadata: AooData( \json, evt.dictToJSON( evt.metadata ? () ) ) );
 					}
 				});
 				evt.changed( \connecting );
