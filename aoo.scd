@@ -39,7 +39,6 @@
 									evt.eventListen( type, args );
 								});
 								evt.resetRTT;
-								//{ evt.sendMetadata; }.defer(1);
 							} {
 								evt.changed( \disconnected );
 							};
@@ -68,11 +67,13 @@
 		},
 		\peerJoin, {
 			evt.updatePeers;
-			evt.sendMetadata( args );
 		},
 		\peerLeave, {
 			evt.updatePeers;
-		}
+		},
+		\peerUpdate, {
+			evt.updatePeers;
+		},
 	)
 };
 
@@ -125,16 +126,9 @@
 };
 
 ~aoo.sendMetadata = { |evt, peer|
-	//"sending metadata to %\n".postf( peer ? "all peers");
-	evt.sendMsg( peer, 0.0, AooData( \json, evt.dictToJSON( evt.metadata ? () ) ) );
-};
-
-~aoo.acceptMetadata = { |evt, data, peer|
-	//"receiving metadata from %\n".postf( peer );
-	if( data.isKindOf( AooData ) ) { data = data.data };
-	evt.knownPeers.detect({ |item|
-		item.peer.user.name == peer.user.name
-	}) !? { |item| item.metadata = evt.jsonToDict( data ) };
+	evt.client.updateUser( "ws-test",
+		AooData( \json, evt.dictToJSON( evt.metadata ? () ))
+	);
 };
 
 ~aoo.addOSCFunc = { |evt, func, key = '/test'|
@@ -205,6 +199,9 @@
 				item.active = true;
 				activeChanged = true;
 			};
+			item.metadata = if( clientPeer.user.metadata.notNil ) {
+				evt.jsonToDict( clientPeer.user.metadata.data )
+			} { nil };
 		} {
 			if( item.active != false ) {
 				item.active = false;
