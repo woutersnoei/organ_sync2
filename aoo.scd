@@ -299,12 +299,12 @@
 		[
 			Color.red(0.7),
 			Color.green(0.7)
-		][ (evt.client !? { |x| x.state == \connected } ? false).binaryValue ]
+		][ (evt.client.groups.size > 0 ).binaryValue ]
 	);
 
 	views[ \connect ] = Button( w, 100@20 )
 	.states_([[ "connect" ],[ "disconnect" ]])
-	.value_( (evt.client !? { |x| x.state == \connected } ? false).binaryValue )
+	.value_( (evt.client.groups.size > 0 ).binaryValue )
 	.action_({ |bt|
 		switch( bt.value,
 			1, { evt.connect; },
