@@ -44,4 +44,7 @@
 ~organ_sync.aoo.sendMsg( "Pi", nil, [ '/test_routine', 0 ] );
 
 ~organ_sync.aoo.sendMsg( "Pi", nil, [ '/request_lates' ])
+
+~organ_sync.aoo.metadata = ('manuals': 6);
+~organ_sync.aoo.sendMetadata;
 */
