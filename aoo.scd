@@ -176,23 +176,30 @@
 	};
 };
 
+~aoo.getClientPeer = { |evt, knownPeer|
+	evt.client.peers.detect({ |peer| peer.user.name == knownPeer.name or: { peer.user.id == knownPeer.id } })
+};
+
 ~aoo.updatePeers = { |evt, reset = false|
 	var changed = false, activeChanged = false;
 	if( reset ) { evt.knownPeers = []; changed = true; };
 	evt.client.peers.do({ |peer|
-		if( (evt.knownPeers ? []).any({ |item| item.peer == peer }).not ) {
-			evt.knownPeers = evt.knownPeers.add( ( peer: peer, active: true ) );
+		if( (evt.knownPeers ? []).any({ |knownPeer|
+			peer.user.name == knownPeer.name or: { peer.user.id == knownPeer.id }
+		}).not ) {
+			evt.knownPeers = evt.knownPeers.add( ( name: peer.user.name, id: peer.user.id, active: true ) );
 			changed = true;
 		};
 	});
 	evt.knownPeers.do({ |item|
 		var clientPeer;
-		clientPeer = evt.client.peers.detect({ |peer| peer == item.peer });
+		clientPeer = evt.getClientPeer( item );
 		if( clientPeer.notNil ) {
-			if( item.peer.user.name != clientPeer.user.name or: {
-				item.peer.user.id != clientPeer.user.id
+			if( item.name != clientPeer.user.name or: {
+				item.id != clientPeer.user.id
 			}) {
-				item.peer = clientPeer;
+				item.name = clientPeer.user.name;
+				item.id = clientPeer.user.id;
 				changed = true;
 			};
 			if( item.active != true ) {
@@ -220,7 +227,7 @@
 
 ~aoo.sortKnownPeers = { |evt|
 	evt.knownPeers = evt.knownPeers.sort({ |a,b|
-		a.peer.user.name <= (b.peer.user.name)
+		a.name <= (b.name)
 	});
 	evt.changed( \knownPeers );
 };
@@ -248,7 +255,7 @@
 		peer = peer.user.name;
 	};
 	evt.knownPeers.detect({ |item|
-		item.peer.user.name == peer;
+		item.name == peer;
 	});
 };
 
@@ -360,9 +367,9 @@
 			vws[ \txt ] = StaticText( vws[ \comp ], (vws[ \comp ].bounds.width - 40) @ 20 )
 			.resize_(5)
 			.background_( Color.hsv(
-				(item.peer.user.name.hash % 2048).linlin( 0,2048, 0.0, 1.0 ), 0.1, 0.7 )
+				(item.name.hash % 2048).linlin( 0,2048, 0.0, 1.0 ), 0.1, 0.7 )
 			)
-			.string_( " % (%)".format( item.peer.user.name, item.peer.user.id ) );
+			.string_( " % (%)".format( item.name, item.id ) );
 			vws[ \send ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 20, 0, 20, 20 ) )
 			.resize_(6)
 			.string_( "s" )
@@ -373,8 +380,8 @@
 			.align_( \center );
 			menu = Menu(
 				MenuAction.separator( " % (%) %".format(
-					item.peer.user.name,
-					item.peer.user.id,
+					item.name,
+					item.id,
 					item.metadata ? ""
 				) ),
 				MenuAction( "Send".format( 100.rand ), { |act, bool|
@@ -488,8 +495,8 @@
 			peer = evt.knownPeers[i];
 			if( peer !? _.active ? false == true ) {
 				vws[ \txt ].string = " % (%) % rtt: %ms, late: %".format(
-					peer.peer.user.name,
-					peer.peer.user.id,
+					peer.name,
+					peer.id,
 					peer.metadata ? "",
 					peer.maxRTT !? (_ * 1000).round(0.1) ? "-",
 					peer.lates ? "-"
