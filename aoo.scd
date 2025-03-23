@@ -156,16 +156,16 @@
 };
 
 ~aoo.sendMsg = { |evt, peer, time, msg, reliable = false|
-	var str;
+	var smb;
 	if( peer.isString or: { peer.isKindOf( Symbol ) } ) {
-		str = peer.asString;
+		smb = peer.asSymbol;
 		peer = evt.client.peers.detect({ |item|
-			item.user.name == str;
+			item.user.name.asSymbol == smb;
 		});
-		if( peer.isNil ) { "user '%' not found, sent to all instead\n".postf( str ); }
+		if( peer.isNil ) { "user '%' not found, sent to all instead\n".postf( smb ); }
 	};
 
-	evt.client.sendMsg( peer, time ? 0.0, msg, reliable );
+	evt.client.sendMsg( peer.postln, time ? 0.0, msg, reliable );
 
 	if( peer.isNil ) {
 		evt.knownPeers.select({ |item| item.active == true }).do({ |item|
@@ -177,7 +177,7 @@
 };
 
 ~aoo.getClientPeer = { |evt, knownPeer|
-	evt.client.peers.detect({ |peer| peer.user.name == knownPeer.name or: { peer.user.id == knownPeer.id } })
+	evt.client.peers.detect({ |peer| peer.user.name.asSymbol == knownPeer.name or: { peer.user.id == knownPeer.id } })
 };
 
 ~aoo.updatePeers = { |evt, reset = false|
@@ -185,9 +185,9 @@
 	if( reset ) { evt.knownPeers = []; changed = true; };
 	evt.client.peers.do({ |peer|
 		if( (evt.knownPeers ? []).any({ |knownPeer|
-			peer.user.name == knownPeer.name or: { peer.user.id == knownPeer.id }
+			peer.user.name.asSymbol === knownPeer.name or: { peer.user.id == knownPeer.id }
 		}).not ) {
-			evt.knownPeers = evt.knownPeers.add( ( name: peer.user.name, id: peer.user.id, active: true ) );
+			evt.knownPeers = evt.knownPeers.add( ( name: peer.user.name.asSymbol, id: peer.user.id, active: true ) );
 			changed = true;
 		};
 	});
@@ -195,10 +195,10 @@
 		var clientPeer;
 		clientPeer = evt.getClientPeer( item );
 		if( clientPeer.notNil ) {
-			if( item.name != clientPeer.user.name or: {
+			if( item.name != clientPeer.user.name.asSymbol or: {
 				item.id != clientPeer.user.id
 			}) {
-				item.name = clientPeer.user.name;
+				item.name = clientPeer.user.name.asSymbol;
 				item.id = clientPeer.user.id;
 				changed = true;
 			};
@@ -252,7 +252,9 @@
 
 ~aoo.findKnownPeer = { |evt, peer|
 	if( peer.isKindOf( AooPeer ) ) {
-		peer = peer.user.name;
+		peer = peer.user.name.asSymbol;
+	} {
+		peer = peer.asSymbol;
 	};
 	evt.knownPeers.detect({ |item|
 		item.name == peer;
