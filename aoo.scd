@@ -155,9 +155,10 @@
 };
 
 ~aoo.removeOSCFunc = { |evt, key = '/test'|
-	var name = "recv%_%".format( evt.userName, key ).asSymbol;
+	var name = "recv%_%".format( evt.port, key ).asSymbol;
 	OSCdef( name ).free;
 	evt.oscFuncCTRLs !? { |x| x[ key ].remove; x[ key ] = nil };
+	"removing OSCdef '%'\n".postf( name );
 };
 
 ~aoo.sendMsg = { |evt, peer, time, msg, reliable = false|
