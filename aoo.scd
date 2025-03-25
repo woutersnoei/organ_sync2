@@ -132,20 +132,25 @@
 };
 
 ~aoo.addOSCFunc = { |evt, func, key = '/test'|
-	var name = "recv%_%".format( evt.userName, key ).asSymbol;
-	evt.oscFuncCTRLs = evt.oscFuncCTRLs ?? {()};
-	evt.oscFuncCTRLs[ key ].free;
-	evt.oscFuncCTRLs[ key ] = SimpleController( evt )
-	.put( \connected, {
-		"adding OSCdef '%'\n".postf( name );
-		OSCdef( name, func, key, dispatcher: evt.client.dispatcher );
-	})
-	.put( \disconnected, {
-		"removing OSCdef '%'\n".postf( name );
-		OSCdef( name ).free;
-	});
-	if( evt.client.notNil && { evt.client.state == \connected }) {
-		evt.oscFuncCTRLs[ key ].update( evt, \connected );
+	var name;
+	if( func.notNil ) {
+		name = "recv%_%".format( evt.port, key ).asSymbol;
+		evt.oscFuncCTRLs = evt.oscFuncCTRLs ?? {()};
+		evt.oscFuncCTRLs[ key ].free;
+		evt.oscFuncCTRLs[ key ] = SimpleController( evt )
+		.put( \connected, {
+			"adding OSCdef '%'\n".postf( name );
+			OSCdef( name, { |...args| func.value( *args ++ [ evt ] ) }, key, dispatcher: evt.client.dispatcher );
+		})
+		.put( \disconnected, {
+			"removing OSCdef '%'\n".postf( name );
+			OSCdef( name ).free;
+		});
+		if( evt.client.notNil && { evt.client.state == \connected }) {
+			evt.oscFuncCTRLs[ key ].update( evt, \connected );
+		};
+	} {
+		evt.removeOSCFunc( key );
 	};
 };
 
