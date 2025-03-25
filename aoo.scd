@@ -385,30 +385,34 @@
 			vws[ \send ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 20, 0, 20, 20 ) )
 			.resize_(6)
 			.string_( "s" )
-			.align_( \center );
+			.align_( \center )
+			.stringColor_( [ Color.gray(0.75), Color.black ][(item.send ? true).binaryValue] );
 			vws[ \receive ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 40, 0, 20, 20 ) )
 			.resize_(6)
 			.string_( "r" )
-			.align_( \center );
+			.align_( \center )
+			.stringColor_( [ Color.gray(0.75), Color.black ][(item.receive ? true).binaryValue] );
 			menu = Menu(
 				MenuAction.separator( " % (%) %".format(
 					item.name,
 					item.id,
 					item.metadata ? ""
 				) ),
-				MenuAction( "Send".format( 100.rand ), { |act, bool|
+				MenuAction( "Send", { |act, bool|
+					item.send = bool;
 					if( bool == true ) {
 						vws[ \send ].stringColor = Color.black;
 					} {
-						vws[ \send ].stringColor = Color.gray( 0.5 );
+						vws[ \send ].stringColor = Color.gray( 0.75 );
 					};
 				})
 				.checked_( true ),
-				MenuAction( "Receive".format( 100.rand ), { |act, bool|
+				MenuAction( "Receive", { |act, bool|
+					item.receive = bool;
 					if( bool == true ) {
 						vws[ \receive ].stringColor = Color.black;
 					} {
-						vws[ \receive ].stringColor = Color.gray( 0.5 );
+						vws[ \receive ].stringColor = Color.gray( 0.75 );
 					};
 				})
 				.checked_( true ),
