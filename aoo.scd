@@ -171,7 +171,11 @@
 		if( peer.isNil ) { "user '%' not found, sent to all instead\n".postf( smb ); }
 	};
 
-	evt.client.sendMsg( peer.postln, time ? 0.0, msg, reliable );
+	time = time ? 0.0;
+
+	evt.client.sendMsg( peer, time, msg, reliable );
+
+	if( evt.verbose ) { "sendMsg( %, %, % )\n".postf( peer, time, msg ); };
 
 	if( peer.isNil ) {
 		evt.knownPeers.select({ |item| item.active == true }).do({ |item|
