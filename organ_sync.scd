@@ -266,7 +266,7 @@
 		var key, cmd, type;
 		#key, cmd, type = arr;
 		evt.aoo.addOSCFunc({ |msg, time, peer, client|
-			var knownPeer = evt.findKnownPeer( peer ) ?? { () };
+			var knownPeer = evt.aoo.findKnownPeer( peer ) ?? { () };
 			var filter;
 			if( knownPeer.receive != false ) {
 				filter = evt.localSetting !? _.filter;
