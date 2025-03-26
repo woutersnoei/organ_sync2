@@ -128,9 +128,11 @@
 };
 
 ~aoo.sendMetadata = { |evt, peer|
-	evt.client.updateUser( "ws-test",
-		AooData( \json, evt.dictToJSON( evt.metadata ? () ))
-	);
+	if( evt.client.notNil && { evt.client.groups.size > 0 }) {
+		evt.client.updateUser( evt.groupName,
+			AooData( \json, evt.dictToJSON( evt.metadata ? () ))
+		);
+	};
 };
 
 ~aoo.addOSCFunc = { |evt, func, key = '/test'|
