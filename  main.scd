@@ -4,16 +4,21 @@
 ~organ_sync.filePath = thisProcess.nowExecutingPath.dirname;
 
 [
-	"aoo"
+	"aoo",
+	"organ_sync",
+	"bo",
+	"window",
 ].do({ |item|
 	(~organ_sync.filePath +/+ item ++ ".scd").load;
 });
 
-
-~organ_sync.aoo= ().parent_( ~aoo );
+~organ_sync.aoo = ().parent_( ~aoo );
+~organ_sync.coupleMetadata;
 ~organ_sync.aoo.userName = ""; // -> fill in for auto-connect
 ~organ_sync.aoo.connect;
-~organ_sync.aoo.makeWindow;
+~organ_sync.makeMIDIFuncs;
+~organ_sync.makeOSCFuncs;
+~organ_sync.makeWindow;
 
 ~organ_sync.aoo.addOSCFunc({ |msg|
 	~test_routine.stop;
@@ -44,7 +49,4 @@
 ~organ_sync.aoo.sendMsg( "Pi", nil, [ '/test_routine', 0 ] );
 
 ~organ_sync.aoo.sendMsg( "Pi", nil, [ '/request_lates' ])
-
-~organ_sync.aoo.metadata = ('manuals': 6);
-~organ_sync.aoo.sendMetadata;
 */
