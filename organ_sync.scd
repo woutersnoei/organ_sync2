@@ -2,7 +2,7 @@
 
 ~organ_sync.remoteSettings = ();
 
-~organ_sync.sendLatency = 0.02;
+~organ_sync.sendLatency = 0.02; // 0.02 seems safe in most circumstances
 
 ~organ_sync.checkManuals = true;
 
@@ -23,6 +23,10 @@
 	midiOut: nil, // name of midiout device (nil is no midi out)
 	filter: nil, // array of types to filter (i.e. not receive)
 );
+
+~organ_sync.coupleMetadata = { |evt|
+	evt.aoo.metadata = { ( manuals: evt.localSetting.manuals ) };
+};
 
 // -------- remotes: -------------
 
@@ -122,6 +126,22 @@
 
 // -------- local: -------------
 
+~organ_sync.makeMIDIOut = { |evt|
+	var endPoint;
+	endPoint = evt.findMIDIEndPoint( \out, evt.localSetting.midiOut );
+	if( endPoint.notNil ) {
+		evt.midiOut = MIDIOut( 0, endPoint.uid ).latency_( 0 );
+	} {
+		evt.midiOut = ( // create spoof MIDIOut with warnings if no MIDI device detected
+			\noteOn: { |evt ...args| "noteOn %: no MIDI device set or detected\n".postf( args ) },
+			\control: { |evt ...args| "control %: no MIDI device set or detected\n".postf( args ) },
+			\program: { |evt ...args| "program %: no MIDI device set or detected\n".postf( args ) },
+			\sysex: { |evt ...args| "sysex %: no MIDI device set or detected\n".postf( args ) },
+			\write: { |evt ...args| "midi data %: no MIDI device set or detected\n".postf( args ) },
+		);
+	};
+};
+
 ~organ_sync.sendLocalNote = { |evt, manual = 0, nn = 64, velo = 127, dur| // nn can be Array
 	var chan, auxChan;
 	switch( evt.localSetting.mode,
@@ -189,7 +209,7 @@
 			// to do
 		},
 		\midi, {
-			if( program.isNil ) {
+			if( program.notNil ) {
 				evt.midiOut.control( 0, 0, bank );
 				evt.midiOut.program( 0, program );
 			} {
@@ -251,7 +271,7 @@
 			if( knownPeer.receive != false ) {
 				filter = evt.localSetting !? _.filter;
 				if( ( filter !? _.includes( type ) ? false ).not ) {
-					SystemClock.schedAbs( time, { |t|
+					SystemClock.schedAbs( time + ( knownPeer.latency ? 0 ), { |t|
 						evt.perform( cmd, *msg[1..] );
 					});
 				};
@@ -268,29 +288,45 @@
 
 // -------- midifuncs: -------------
 
-~organ_sync.makeMIDISourceDicts = { |evt| // two-way midi source/uid dict
-	evt.midiInUIDDict = ();
-	evt.midiInDeviceDict = ();
-	evt.midiOutUIDDict = ();
-	evt.midiOutDeviceDict = ();
+~organ_sync.makeMIDISourceDicts = { |evt| // lookup tables for quick access
+	evt.midiDict = (
+		\in:  ( \uid: (), \device: (), \list: [] ),
+		\out: ( \uid: (), \device: (), \list: [] ),
+	);
 	MIDIIn.connectAll;
 	MIDIClient.sources.do({ |ep|
 		var name ="%/%".format( ep.device, ep.name ).asSymbol;
-		evt.midiInDeviceDict.put( ep.uid, name );
-		evt.midiInUIDDict.put( name, ep.uid );
+		evt.midiDict.in.device.put( ep.uid, name );
+		evt.midiDict.in.uid.put( name, ep.uid );
+		evt.midiDict.in.list = evt.midiDict.in.list.add( name );
 	});
 	MIDIClient.destinations.do({ |ep|
 		var name ="%/%".format( ep.device, ep.name ).asSymbol;
-		evt.midiOutDeviceDict.put( ep.uid, name );
-		evt.midiOutUIDDict.put( name, ep.uid );
+		evt.midiDict.out.device.put( ep.uid, name );
+		evt.midiDict.out.uid.put( name, ep.uid );
+		evt.midiDict.out.list = evt.midiDict.out.list.add( name );
 	});
+	evt.changed( \midiDict );
+};
+
+~organ_sync.findMIDIEndPoint = { |evt, mode = \in, name|
+	if( name.isKindOf( Number ) ) {
+		name = evt.midiDict[ mode ].list[ name ] ? name;
+	};
+	if( name.isKindOf( Symbol ) ) {
+		name = evt.midiDict[ mode ].uid[ name ];
+	};
+	switch( mode,
+		\in, { MIDIClient.sources.detect({ |item| item.uid == name }) },
+		\out, { MIDIClient.destinations.detect({ |item| item.uid == name }) },
+	);
 };
 
 ~organ_sync.midiRespond = { |evt, uid, remoteFunc, localFunc|
 	var device;
-	device = evt.midiInDeviceDict[ uid ] ? uid;
+	device = evt.midiDict.in.device[ uid ] ? uid;
 	if( evt.localSetting.midiIn == \all or: {
-		evt.localSetting.midiIn.includes( device );
+		evt.localSetting.midiIn.asArray.includes( device );
 	} ) { remoteFunc.value( device ) };
 	if( evt.localSetting.localThru == true, localFunc );
 };
@@ -338,7 +374,8 @@
 
 ~organ_sync.makeMIDIFuncs;
 
-
+~organ_sync.localSetting.localThru = false;
+~organ_sync.localSetting.mode = \midi;
 
 ~organ_sync.sendToRemote( "Pi", \post, 0, $[, 64,65,66, $], 128 );
 ~organ_sync.checkManuals.not
@@ -349,11 +386,17 @@ x.hello
 
 y = ().parent_( x );
 
-MIDIIn.doNoteOnAction( nil, 10, 0, 10 );
+~organ_sync.sendLocalProgram( 1 )
+
+~organ_sync.midiOut.program( 0, 0 )
+
+MIDIIn.doNoteOnAction( nil, 0, 102, 11 );
 
 MIDIIn.doNoteOffAction( nil, 10, 0, 127 );
 
 MIDIIn.doControlAction( nil, 0, 7, 127 );
+
+MIDIIn.doProgramAction( nil, 0, 9 );
 
 y.hello(1)
 
