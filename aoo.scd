@@ -11,6 +11,8 @@
 
 ~aoo.port = 9995;
 
+~aoo.reliable = false; // message sending mode, false is probably ok
+
 ~aoo.verbose = true;
 
 ~aoo.connect = { |evt, action, freeFirst = true|
@@ -161,7 +163,7 @@
 	"removing OSCdef '%'\n".postf( name );
 };
 
-~aoo.sendMsg = { |evt, peer, time, msg, reliable = false|
+~aoo.sendMsg = { |evt, peer, time, msg|
 	var smb;
 	if( peer.isString or: { peer.isKindOf( Symbol ) } ) {
 		smb = peer.asSymbol;
@@ -173,7 +175,7 @@
 
 	time = time ? 0.0;
 
-	evt.client.sendMsg( peer, time, msg, reliable );
+	evt.client.sendMsg( peer, time, msg, evt.reliable == true );
 
 	if( evt.verbose ) { "sendMsg( %, %, % )\n".postf( peer, time, msg ); };
 
