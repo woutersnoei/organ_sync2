@@ -80,6 +80,7 @@
 		} {
 			evt.localSetting.midiOut = nil;
 		};
+		evt.makeMIDIOut;
 		evt.changed( \localSetting );
 	});
 
