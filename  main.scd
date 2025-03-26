@@ -19,6 +19,7 @@
 ~organ_sync.makeMIDIFuncs;
 ~organ_sync.makeOSCFuncs;
 ~organ_sync.makeWindow;
+~organ_sync.makeMIDIOut;
 
 ~organ_sync.aoo.addOSCFunc({ |msg|
 	~test_routine.stop;
