@@ -282,14 +282,21 @@
 };
 
 (
-~aoo.makeWindow = { |evt|
+~aoo.makeWindow = { |evt, inView|
 	var w, views = (), update, fillPeers, colorPeers, ctrl;
 	if( evt.win.notNil && { evt.win.isClosed.not } ) {
 		evt.win.close;
 	};
-	w = Window( "AOO : %".format( evt.server ), Rect(200,200, 420, 280) ).front;
+	if( inView.notNil ) {
+		w = CompositeView( inView, Rect( 0,0, 412, 276 ) )
+		.resize_( 5 );
+		w.bounds = w.bounds.insetAll( -4, -4, -4, 0 );
+	} {
+		w = Window( "AOO : %".format( evt.server ), Rect(200,200, 420, 280) ).front;
+		w.asView.minWidth_( 420 ).minHeight_( 256 );
+	};
+
 	w.addFlowLayout;
-	w.view.minWidth_( 420 ).minHeight_( 256 );
 
 	StaticText( w, 100@20 )
 	.string_( "userName: " )
@@ -309,9 +316,7 @@
 			"changed userName to '%'\n".postf( evt.userName );
 			vw.stringColor = Color.black;
 			evt.changed( \userName );
-			if( evt.client.notNil && { evt.client.groups.size > 0 }) {
-				evt.connect;
-			};
+			evt.connect;
 		};
 	});
 
@@ -338,8 +343,10 @@
 		);
 	});
 
-	views[ \comp ] = CompositeView( w, 412@224 ).background_( Color.gray(0.9) ).resize_(5);
+	views[ \comp ] = CompositeView( w, 412@224 ).background_( Color.gray(0.9) ).resize_(4);
 	views[ \comp ].addFlowLayout;
+
+	w.asView.decorator.nextLine;
 
 	views[ \sort ] = Button( w, 100@20 )
 	.states_([["sort"]])
