@@ -288,7 +288,10 @@
 
 // -------- midifuncs: -------------
 
-~organ_sync.makeMIDISourceDicts = { |evt| // lookup tables for quick access
+~organ_sync.makeMIDISourceDicts = { |evt, restart = false| // lookup tables for quick access
+	if( restart == true ) {
+		MIDIClient.restart;
+	};
 	evt.midiDict = (
 		\in:  ( \uid: (), \device: (), \list: [] ),
 		\out: ( \uid: (), \device: (), \list: [] ),
