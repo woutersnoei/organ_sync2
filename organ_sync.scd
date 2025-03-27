@@ -53,20 +53,35 @@
 	};
 };
 
+~organ_sync.routeRemoteNote = { |evt, peer, device, chan = 0, func|
+	var knownPeer, setting, numManuals, midiChannels;
+	knownPeer = evt.aoo.findKnownPeer( peer );
+	setting = evt.remoteSettings[ peer.user.name.asSymbol ] ?? {()};
+	if( (setting.filter ? #[]).includes( \note ).not ) {
+		numManuals = knownPeer.metadata !? { knownPeer.metadata.manuals ? 16 } ? 16;
+		midiChannels = setting.midiChannels ? #[];
+		numManuals.do({ |manual|
+			var matchChannel, matchDevice;
+			matchChannel = midiChannels[ manual ] ? manual;
+			matchDevice = setting.device !? { |x| if( x.size > 0 ) { x[ manual ] } { x } } ? nil;
+			if( [ \all, chan ].includes( matchChannel ) && {
+				matchDevice.isNil or: { device == matchDevice }
+			}) {
+				func.value( manual, setting );
+			};
+		});
+	};
+};
+
 ~organ_sync.sendRemoteNote = { |evt, device, chan = 0, nn = 64, velo = 127, dur|
 	evt.aoo.client.peers.do({ |peer|
-		var setting, manual;
-		setting = evt.remoteSettings[ peer.user.name.asSymbol ] ?? {()};
-		if( (setting.filter ? #[]).includes( \note ).not ) {
-			manual = (setting.midiChannels ? []).indexOf( chan ) ? chan;
-			if( setting.device.isNil or: { setting.device[ manual ].isNil or: { setting.device[ manual ] == device } } ) {
-				if( dur.notNil ) {
-					evt.sendRemoteMsg( peer, \note, manual, nn, velo, dur );
-				} {
-					evt.sendRemoteMsg( peer, \note, manual, nn, velo );
-				};
+		evt.routeRemoteNote( peer, device, chan, { |manual, setting|
+			if( dur.notNil ) {
+				evt.sendRemoteMsg( peer, \note, manual, nn, velo, dur );
+			} {
+				evt.sendRemoteMsg( peer, \note, manual, nn, velo );
 			};
-		}
+		})
 	});
 };
 
@@ -395,7 +410,7 @@ y = ().parent_( x );
 
 MIDIIn.doNoteOnAction( nil, 0, 102, 11 );
 
-MIDIIn.doNoteOffAction( nil, 10, 0, 127 );
+MIDIIn.doNoteOffAction( nil, 1, 0, 127 );
 
 MIDIIn.doControlAction( nil, 0, 7, 127 );
 
