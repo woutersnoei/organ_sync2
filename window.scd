@@ -103,6 +103,13 @@
 	updateMIDI.value;
 	update.value;
 
+	w.asView.decorator.nextLine;
+	w.asView.decorator.shift( 312 );
+
+	Button( w, 100 @ 20 )
+	.states_([[ "save" ]])
+	.action_({ evt.storeSettings; });
+
 	ctrl = SimpleController( evt )
 	.put( \localSetting, { { update.value }.defer })
 	.put( \midiDict,  { { updateMIDI.value; update.value }.defer } );

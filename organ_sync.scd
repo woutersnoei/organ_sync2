@@ -388,6 +388,42 @@
 	});
 };
 
+// -------- store/read settings: -------------
+
+~organ_sync.getSettings = { |evt|
+	(
+		localSetting: evt.localSetting,
+		remoteSettings: evt.remoteSettings,
+		userName: evt.aoo.userName,
+		port: evt.aoo.port
+	)
+};
+
+~organ_sync.applySettings = { |evt, settings|
+	if( settings.notNil ) {
+		evt.localSetting = settings.localSetting ? evt.localSetting;
+		evt.remoteSettings = settings.remoteSettings ? evt.remoteSettings;
+		evt.aoo.userName = settings.userName ? evt.aoo.userName;
+		evt.aoo.port = settings.port ? evt.aoo.port;
+	};
+};
+
+~organ_sync.settingsPath = Platform.userAppSupportDir +/+ "organ_sync_settings.scd";
+
+~organ_sync.storeSettings = { |evt|
+	File.use( evt.settingsPath, "w", { |f|
+		f.putString( evt.getSettings.cs );
+	});
+	"stored settings to %\n".postf( evt.settingsPath );
+};
+
+~organ_sync.loadSettings = { |evt|
+	if( File.exists( evt.settingsPath ) ) {
+		evt.applySettings( evt.settingsPath.load );
+		"loaded settings from %\n".postf( evt.settingsPath );
+	};
+};
+
 /*
 
 ~organ_sync.makeMIDIFuncs;

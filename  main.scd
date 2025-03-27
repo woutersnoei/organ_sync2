@@ -16,7 +16,7 @@ if( (~organ_sync.filePath +/+ "aoo test.scd").load == true ) {
 
 	~organ_sync.aoo = ().parent_( ~aoo );
 	~organ_sync.coupleMetadata;
-	~organ_sync.aoo.userName = ""; // -> fill in for auto-connect
+	~organ_sync.loadSettings;
 	~organ_sync.aoo.connect;
 	~organ_sync.makeMIDIFuncs;
 	~organ_sync.makeOSCFuncs;
