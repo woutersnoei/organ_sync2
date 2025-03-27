@@ -119,4 +119,148 @@
 	evt.win = w;
 	evt.views = views;
 };
+
+~organ_sync.makeRemoteMappingWindow = { |evt|
+	var w, views = (), update, filterList, ctrl;
+	var manualList, remoteSetting;
+	var windowHeight, windowBounds = Rect(200,200, 420, 400);
+	if( evt.rmWin.notNil && { evt.rmWin.isClosed.not } ) {
+		windowBounds = evt.rmWin.bounds;
+		evt.rmWin.close;
+	};
+	windowBounds.height = evt.aoo.knownPeers.collect({ |item|
+		((item.metadata !? _.manuals ? 4) * 20) + 20 + 20
+	}).sum - 6;
+	w = Window( "organ_sync", windowBounds, false ).front;
+	w.addFlowLayout;
+
+	manualList = [ "P" ] ++ (1..15).collect( "M" ++ _ );
+
+	remoteSetting = { |name|
+		if( evt.remoteSettings[ name ].isNil ) {
+			evt.remoteSettings[ name ] = ();
+		};
+		evt.remoteSettings[ name ];
+	};
+
+	filterList = [ \note, \cc, \program, \sysex ];
+
+	evt.aoo.knownPeers.do({ |item|
+		views[ item.name ] = ();
+		StaticText( w, 104 @ 16 )
+		.string_( item.name )
+		.align_( \center )
+		.font_( Font( Font.defaultSansFace, 12, true ) );
+		views[ item.name ][ \filter ] = filterList.collect({ |key, i|
+			Button( w, ((304 - ((filterList.size - 1)*4)) / filterList.size).floor.asInteger @ 16 )
+			.states_([
+				[ key, Color.black, Color.green(0.7).blend( Color.white, 0.7 ) ],
+				[ key, Color.black, Color.red(0.7).blend( Color.white, 0.7 ) ],
+			])
+			.action_({ |bt|
+				var filter;
+				filter = remoteSetting.( item.name ).filter ?? {[]};
+				switch( bt.value,
+					1, { if( filter.includes( key ).not ) { filter = filter.add( key ) } },
+					0, { filter.remove( key ); }
+				);
+				if( filter.size == 0 ) { filter = nil };
+				remoteSetting.( item.name ).filter = filter;
+			})
+		});
+		views[ item.name ].setFilter = { |evx|
+			var filter;
+			filter = remoteSetting.( item.name ).filter ?? {[]};
+			filterList.do({ |key, i|
+				views[ item.name ][ \filter ][i].value = filter.includes( key ).binaryValue;
+			})
+		};
+		views[ item.name ].setFilter;
+		w.asView.decorator.nextLine;
+		views[ item.name ][ \manuals ] = (item.metadata !? _.manuals ? 4).collect({ |manual|
+			var vws = ();
+			StaticText( w, 50 @ 16 )
+			.string_( manualList[ manual ] )
+			.align_( \center );
+			vws[ \channel ] = PopUpMenu( w, 50 @ 16 )
+			.items_( (1..16) ++ [ \any, \off ] )
+			.action_({ |pu|
+				var ch, midiChannels;
+				switch( pu.value,
+					16, { ch = 'any' },
+					17, { ch = 'off' },
+					{ ch = pu.value }
+				);
+				midiChannels = remoteSetting.( item.name ).midiChannels;
+				if( ch == manual ) {
+					if( midiChannels.size > manual ) {
+						midiChannels[ manual ] = nil;
+						while { midiChannels.last == nil && { midiChannels.size > 0 } } {
+							midiChannels.pop
+						};
+						if( midiChannels.size == 0 ) { midiChannels = nil; }
+					};
+				} {
+					if( midiChannels.size <= manual ) {
+						midiChannels = (midiChannels ?? {[]}).extend( manual+1, nil );
+					};
+					midiChannels[ manual ] = ch;
+				};
+				remoteSetting.( item.name ).midiChannels = midiChannels;
+			});
+			vws.setChannel = { |evx|
+				var val;
+				val = (remoteSetting.( item.name ).midiChannels ?? {[]})[ manual ] ? manual;
+				switch( val,
+					\any, { val = 16 },
+					\off, { val = 17 },
+				);
+				evx.channel.value = val;
+			};
+			vws.setChannel;
+			vws[ \device ] = PopUpMenu( w, 304 @ 16 )
+			.items_([ 'any device' ] ++ evt.midiDict.in.list);
+			if( i == 0 ) {
+				vws[ \device ].action = { |pu|
+					var device;
+					device = remoteSetting.( item.name ).device;
+					// ....
+				};
+			} {
+			};
+			vws.setDevice = { |evt|
+				var device;
+				device = remoteSetting.( item.name ).device;
+				case { device.isNil } {
+					vws[ \device ].value = 0
+				} { device.isKindOf( Symbol ) } {
+					vws[ \device ].value = vws[ \device ].items.indexOf( device ) ? 0
+				} { device.isArray } {
+					vws[ \device ].value = vws[ \device ].items.indexOf( device[ manual ] ) ? 0
+				};
+			};
+			vws.setDevice;
+			w.asView.decorator.nextLine;
+			vws;
+		});
+		w.asView.decorator.shift( 0, 20 );
+	});
+
+	w.onClose_({ ctrl.remove });
+
+	evt.rmWin = w;
+	evt.rmViews = views;
+};
+
 );
+
+/*
+
+~organ_sync.makeRemoteMappingWindow;
+
+~organ_sync.remoteSettings[ \Pi ].device = nil;
+
+~organ_sync.aoo.knownPeers = ~organ_sync.aoo.knownPeers.add( ( name: "SomeoneElsXXe" ) );
+~organ_sync.aoo.changed( \knownPeers )
+
+*/
