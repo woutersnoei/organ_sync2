@@ -104,6 +104,15 @@
 	update.value;
 
 	w.asView.decorator.nextLine;
+
+	StaticText( w, 100@20 )
+	.resize_(7).string_( "MIDI mapping:").align_( \right );
+
+	Button( w, 150 @ 20 )
+	.states_([[ "remote" ]])
+	.action_({ evt.makeRemoteMappingWindow; });
+
+	w.asView.decorator.nextLine;
 	w.asView.decorator.shift( 312 );
 
 	Button( w, 100 @ 20 )
