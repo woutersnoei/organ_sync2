@@ -42,7 +42,7 @@
 	.resize_(7)
 	.states_([
 		[ "local thru", Color.black, Color.red(0.7).blend( Color.white, 0.7 ) ],
-		[ "local thru", Color.black, Color.green(0.7) ]
+		[ "local thru", Color.black, Color.green(0.7).blend( Color.white, 0.7 ) ]
 	])
 	.action_({ |bt|
 		evt.localSetting.localThru = bt.value.booleanValue;
