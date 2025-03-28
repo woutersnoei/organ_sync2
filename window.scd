@@ -1,6 +1,6 @@
 (
 ~organ_sync.makeWindow = { |evt|
-	var w, views = (), update, updateMIDI, ctrl;
+	var w, views = (), update, updateMIDI, checkMIDI, ctrl;
 	if( evt.win.notNil && { evt.win.isClosed.not } ) {
 		evt.win.close;
 	};
@@ -26,7 +26,7 @@
 	.items_([ 'osc', 'midi', 'off' ])
 	.action_({ |pu|
 		evt.localSetting.mode = [ \osc, \midi, \off ][ pu.value ];
-		evt.changed( \localSetting );
+		evt.changed( \localSetting, \mode );
 	});
 
 	views[ \manuals ] = PopUpMenu( w, 125@20 )
@@ -34,7 +34,7 @@
 	.items_([ "no manuals", "1 manual" ] ++ (2..16).collect({ |item| "% manuals".format( item ) }) )
 	.action_({ |pu|
 		evt.localSetting.manuals = pu.value;
-		evt.changed( \localSetting );
+		evt.changed( \localSetting, \manuals );
 		evt.aoo.sendMetadata;
 	});
 
@@ -46,7 +46,7 @@
 	])
 	.action_({ |bt|
 		evt.localSetting.localThru = bt.value.booleanValue;
-		evt.changed( \localSetting );
+		evt.changed( \localSetting, \localThru );
 	});
 
 	StaticText( w, 100@20 )
@@ -62,7 +62,7 @@
 		} {
 			evt.localSetting.midiIn = nil;
 		};
-		evt.changed( \localSetting );
+		evt.changed( \localSetting, \midiIn );
 	});
 
 	w.asView.decorator.nextLine;
@@ -81,23 +81,69 @@
 			evt.localSetting.midiOut = nil;
 		};
 		evt.makeMIDIOut;
-		evt.changed( \localSetting );
+		evt.changed( \localSetting, \midiOut );
 	});
 
+	checkMIDI = { |which = \midiIn, trueFunc, falseFunc| // check if midi i/o exists
+		if( [ nil, \all ].includes( evt.localSetting[ which ] ) or: {
+			evt.midiDict[ ( \midiIn: \in, \midiOut: \out )[ which ] ]
+			.list.includes( evt.localSetting[ which ] )
+		}, trueFunc, falseFunc );
+	};
+
 	updateMIDI = {
-		views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ "none (off)" ] );
-		views[ \midiOut ].items_( evt.midiDict.out.list ++ [ "none (off)" ] )
+		checkMIDI.( \midiIn, {
+			views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ "none (off)" ] );
+		}, {
+			views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ evt.localSetting.midiIn, "none (off)" ] );
+		});
+
+		checkMIDI.( \midiOut, {
+			views[ \midiOut ].items_( evt.midiDict.out.list ++ [ "none (off)" ] );
+		}, {
+			views[ \midiOut ].items_( evt.midiDict.out.list ++ [ evt.localSetting.midiOut, "none (off)" ] );
+		});
 	};
 
 	update = {
 		views[ \mode ].value_( [ \osc, \midi, \off ].indexOf( evt.localSetting.mode ) ? 2 );
 		views[ \manuals ].value_( evt.localSetting.manuals );
 		views[ \localThru ].value_( evt.localSetting.localThru.binaryValue ? 0 );
-		views[ \midiIn ].value = views[ \midiIn ].items
-		.indexOf( evt.localSetting.midiIn ) ?? { views[ \midiIn ].items.size - 1 };
-		views[ \midiOut ].value = views[ \midiOut ].items
-		.indexOf( evt.localSetting.midiOut ) ?? { views[ \midiOut ].items.size - 1 };
+
+		checkMIDI.( \midiIn, {
+			views[ \midiIn ].value = views[ \midiIn ].items
+			.indexOf( evt.localSetting.midiIn ) ?? { views[ \midiIn ].items.size - 1 };
+			views[ \midiIn ].stringColor = nil;
+		}, {
+			if( views[ \midiIn ].items.includes( evt.localSetting.midiIn ).not ) {
+				updateMIDI.value;
+			};
+			views[ \midiIn ].value = views[ \midiIn ].items.indexOf( evt.localSetting.midiIn );
+			views[ \midiIn ].stringColor = Color.red;
+		});
+
 		views[ \midiOut ].enabled = evt.localSetting.mode == \midi;
+
+		checkMIDI.( \midiOut, {
+			views[ \midiOut ].value = views[ \midiOut ].items
+			.indexOf( evt.localSetting.midiOut ) ?? { views[ \midiOut ].items.size - 1 };
+			if( views[ \midiOut ].enabled ) {
+				views[ \midiOut ].stringColor = Color.black;
+			} {
+				views[ \midiOut ].stringColor = Color.gray;
+			};
+		}, {
+			if( views[ \midiOut ].items.includes( evt.localSetting.midiOut ).not ) {
+				updateMIDI.value;
+			};
+			views[ \midiOut ].value = views[ \midiOut ].items
+			.indexOf( evt.localSetting.midiOut ) ?? { views[ \midiOut ].items.size - 1 };
+			if( views[ \midiOut ].enabled ) {
+				views[ \midiOut ].stringColor = Color.red;
+			} {
+				views[ \midiOut ].stringColor = Color.red.blend( Color.gray, 0.9 );
+			};
+		});
 	};
 
 	updateMIDI.value;
@@ -110,13 +156,28 @@
 
 	Button( w, 150 @ 20 )
 	.states_([[ "remote" ]])
+	.resize_(7)
 	.action_({ evt.makeRemoteMappingWindow; });
+
+	w.asView.decorator.nextLine;
+
+	StaticText( w, 100@20 )
+	.resize_(7).string_( "").align_( \right );
+
+	Button( w, 100 @ 20 )
+	.states_([[ "refresh MIDI" ]])
+	.resize_(7)
+	.action_({
+		evt.makeMIDISourceDicts( true );
+		evt.makeMIDIOut;
+	});
 
 	w.asView.decorator.nextLine;
 	w.asView.decorator.shift( 312 );
 
 	Button( w, 100 @ 20 )
 	.states_([[ "save" ]])
+	.resize_(7)
 	.action_({ evt.storeSettings; });
 
 	ctrl = SimpleController( evt )
@@ -176,7 +237,7 @@
 				);
 				if( filter.size == 0 ) { filter = nil };
 				remoteSetting.( item.name ).filter = filter;
-				evt.changed( \remoteSettings );
+				evt.changed( \remoteSettings, item.name, \filter );
 			})
 		});
 		views[ item.name ].setFilter = { |evx|
@@ -218,7 +279,7 @@
 					midiChannels[ manual ] = ch;
 				};
 				remoteSetting.( item.name ).midiChannels = midiChannels;
-				evt.changed( \remoteSettings );
+				evt.changed( \remoteSettings, item.name, \channel );
 			});
 			vws.setChannel = { |evx|
 				var val;
@@ -250,7 +311,7 @@
 						if( device.every(_ == device[0]) ) { device = device[0] };
 					};
 					remoteSetting.( item.name ).device = device;
-					evt.changed( \remoteSettings );
+					evt.changed( \remoteSettings, item.name, \device );
 				};
 			} {
 				vws[ \device ].action = { |pu|
@@ -264,7 +325,7 @@
 					);
 					if( device.every(_ == device[0]) ) { device = device[0] };
 					remoteSetting.( item.name ).device = device;
-					evt.changed( \remoteSettings );
+					evt.changed( \remoteSettings, item.name, \device );
 				};
 			};
 			vws.setDevice = { |evt|
@@ -286,14 +347,16 @@
 	});
 
 	ctrl = SimpleController( evt )
-	.put( \remoteSettings, {
+	.put( \remoteSettings, { |obj, msg, which, type|
 		{
 			views.keysValuesDo({ |key, val|
-				val.setFilter;
-				val.manuals.do({ |man|
-					man.setChannel;
-					man.setDevice;
-				})
+				if( [ nil, key ].includes( which ) ) {
+					if( [ nil, \filter ].includes( type ) ) { val.setFilter; };
+					val.manuals.do({ |man|
+						if( [ nil, \channel ].includes( type ) ) { man.setChannel; };
+						if( [ nil, \device ].includes( type ) ) { man.setDevice; };
+					})
+				}
 			});
 		}.defer;
 	});
