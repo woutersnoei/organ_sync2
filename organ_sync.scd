@@ -305,7 +305,7 @@
 
 ~organ_sync.makeMIDISourceDicts = { |evt, restart = false| // lookup tables for quick access
 	if( restart == true ) {
-		MIDIClient.restart;
+		MIDIClient.init;
 	};
 	evt.midiDict = (
 		\in:  ( \uid: (), \device: (), \list: [] ),
