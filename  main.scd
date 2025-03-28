@@ -14,14 +14,7 @@ if( (~organ_sync.filePath +/+ "aoo test.scd").load == true ) {
 		(~organ_sync.filePath +/+ item ++ ".scd").load;
 	});
 
-	~organ_sync.aoo = ().parent_( ~aoo );
-	~organ_sync.coupleMetadata;
-	~organ_sync.loadSettings;
-	~organ_sync.aoo.connect;
-	~organ_sync.makeMIDIFuncs;
-	~organ_sync.makeOSCFuncs;
-	~organ_sync.makeWindow;
-	~organ_sync.makeMIDIOut;
+	~organ_sync.init;
 
 	~organ_sync.aoo.addOSCFunc({ |msg|
 		~test_routine.stop;
@@ -56,4 +49,6 @@ if( (~organ_sync.filePath +/+ "aoo test.scd").load == true ) {
 ~organ_sync.aoo.sendMsg( "Pi", nil, [ '/request_lates' ])
 
 ~organ_sync.makeMIDISourceDicts( true );
+
+~organ_sync.storeSettings;
 */

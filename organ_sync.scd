@@ -28,6 +28,19 @@
 	evt.aoo.metadata = { ( manuals: evt.localSetting.manuals ) };
 };
 
+// -------- initialization: -------------
+
+~organ_sync.init = { |evt|
+	evt.aoo =  evt.aoo ?? { ().parent_( ~aoo ); };
+	evt.coupleMetadata;
+	evt.loadSettings;
+	evt.aoo.connect;
+	evt.makeMIDIFuncs;
+	evt.makeOSCFuncs;
+	evt.makeWindow;
+	evt.makeMIDIOut;
+};
+
 // -------- remotes: -------------
 
 ~organ_sync.sendRemoteMsg = { |evt, which, type = \note ...args| // \note, \cc, \program, \sysex, \midi, \osc
