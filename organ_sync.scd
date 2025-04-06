@@ -416,6 +416,36 @@
 	});
 };
 
+// -------- local OSC func -------------
+
+~organ_sync.makeLocalOSCFunc = { |evt|
+	var typeList = (
+		'note': 'sendLocalNote',
+		'cc': 'sendLocalCC',
+		'program': 'sendLocalProgram',
+		'sysex': 'sendLocalSysEx',
+		'osc': 'sendLocalOSC',
+		'midi': 'sendLocalMIDI',
+		'endAll': 'localEndAllNotes'
+	);
+	OSCdef( 'organ_sync_local', { |msg|
+		var peer, type;
+		#peer, type = msg[[1,2]];
+		switch( peer,
+			\local, {
+				evt.perform( typeList[ type ], *msg[3..] );
+			},
+			\all, {
+				evt.aoo.peers.do({ |pr|
+					evt.sendRemoteMsg( pr, type, *msg[3..] );
+				});
+			}, {
+				evt.sendRemoteMsg( peer, type, *msg[3..] );
+			}
+		);
+	}, '/organ_sync' );
+};
+
 // -------- store/read settings: -------------
 
 ~organ_sync.getSettings = { |evt|

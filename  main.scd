@@ -38,6 +38,7 @@ if( (~organ_sync.filePath +/+ "aoo test.scd").load == true ) {
 		});
 	}, '/request_lates' );
 
+	~organ_sync.makeLocalOSCFunc;
 };
 
 )
