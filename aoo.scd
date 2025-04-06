@@ -191,7 +191,7 @@
 };
 
 ~aoo.getClientPeer = { |evt, knownPeer|
-	evt.client.peers.detect({ |peer| peer.user.name.asSymbol == knownPeer.name or: { peer.user.id == knownPeer.id } })
+	evt.client.peers.detect({ |peer| peer.user.name.asSymbol == knownPeer.name })
 };
 
 ~aoo.updatePeers = { |evt, reset = false|
@@ -199,7 +199,7 @@
 	if( reset ) { evt.knownPeers = []; changed = true; };
 	evt.client.peers.do({ |peer|
 		if( (evt.knownPeers ? []).any({ |knownPeer|
-			peer.user.name.asSymbol === knownPeer.name or: { peer.user.id == knownPeer.id }
+			peer.user.name.asSymbol === knownPeer.name
 		}).not ) {
 			evt.knownPeers = evt.knownPeers.add( ( name: peer.user.name.asSymbol, id: peer.user.id, active: true ) );
 			changed = true;
