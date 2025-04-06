@@ -123,6 +123,7 @@
 		});
 
 		views[ \midiOut ].enabled = evt.localSetting.mode == \midi;
+		views[ \local_mapping ].enabled = evt.localSetting.mode == \midi;
 
 		checkMIDI.( \midiOut, {
 			views[ \midiOut ].value = views[ \midiOut ].items
@@ -146,18 +147,20 @@
 		});
 	};
 
-	updateMIDI.value;
-	update.value;
-
 	w.asView.decorator.nextLine;
 
 	StaticText( w, 100@20 )
 	.resize_(7).string_( "MIDI mapping:").align_( \right );
 
-	Button( w, 150 @ 20 )
-	.states_([[ "remote" ]])
+	Button( w, 152 @ 20 )
+	.states_([[ "to remote" ]])
 	.resize_(7)
 	.action_({ evt.makeRemoteMappingWindow; });
+
+	views[ \local_mapping ] = Button( w, 152 @ 20 )
+	.states_([[ "local" ]])
+	.resize_(7)
+	.action_({ evt.makeLocalMappingWindow; });
 
 	w.asView.decorator.nextLine;
 
@@ -184,6 +187,9 @@
 	.put( \localSetting, { { update.value }.defer })
 	.put( \midiDict,  { { updateMIDI.value; update.value }.defer } );
 
+	updateMIDI.value;
+	update.value;
+
 	w.onClose_({ ctrl.remove });
 
 	evt.win = w;
@@ -201,7 +207,7 @@
 	windowBounds.height = evt.aoo.knownPeers.collect({ |item|
 		((item.metadata !? _.manuals ? 4) * 20) + 20 + 20
 	}).sum - 6;
-	w = Window( "remote MIDI mapping", windowBounds, false ).front;
+	w = Window( "to remote MIDI mapping", windowBounds, false ).front;
 	w.addFlowLayout;
 
 	manualList = [ "P" ] ++ (1..15).collect( "M" ++ _ );
@@ -367,11 +373,123 @@
 	evt.rmViews = views;
 };
 
+~organ_sync.makeLocalMappingWindow = { |evt|
+	var w, views = (), update, filterList, ctrl;
+	var manualList;
+	var windowHeight, windowBounds = Rect(200,200, 420, 200);
+	var numManuals = evt.localSetting[ \manuals ] ? 4;
+
+	if( evt.lcWin.notNil && { evt.lcWin.isClosed.not } ) {
+		windowBounds = evt.lcWin.bounds;
+		evt.lcWin.close;
+	};
+	windowBounds.height = (((evt.localSetting.manuals ? 4) / 4).ceil * 20) + 20 + 6;
+	w = Window( "local out MIDI mapping", windowBounds, false ).front;
+	w.addFlowLayout;
+
+	manualList = [ "P" ] ++ (1..15).collect( "M" ++ _ );
+
+	filterList = [ \note, \cc, \program, \sysex ];
+
+	StaticText( w, 104 @ 16 )
+	.string_( "Local" )
+	.align_( \center )
+	.font_( Font( Font.defaultSansFace, 12, true ) );
+	views[ \filter ] = filterList.collect({ |key, i|
+		Button( w, ((304 - ((filterList.size - 1)*4)) / filterList.size).floor.asInteger @ 16 )
+		.states_([
+			[ key, Color.black, Color.green(0.7).blend( Color.white, 0.7 ) ],
+			[ key, Color.black, Color.red(0.7).blend( Color.white, 0.7 ) ],
+		])
+		.action_({ |bt|
+			var filter;
+			filter = evt.localSetting.filter ?? {[]};
+			switch( bt.value,
+				1, { if( filter.includes( key ).not ) { filter = filter.add( key ) } },
+				0, { filter.remove( key ); }
+			);
+			if( filter.size == 0 ) { filter = nil };
+			evt.localSetting.filter = filter;
+			evt.changed( \localSetting, \filter );
+		})
+	});
+	views.setFilter = { |evx|
+		var filter;
+		filter = evt.localSetting.filter ?? {[]};
+		filterList.do({ |key, i|
+			views[ \filter ][i].value = filter.includes( key ).binaryValue;
+		})
+	};
+	views.setFilter;
+	w.asView.decorator.nextLine;
+	views[ \manuals ] = numManuals.collect({ |manual|
+		var vws = ();
+		StaticText( w, 48 @ 16 )
+		.string_( manualList[ manual ] )
+		.align_( \center );
+		vws[ \channel ] = PopUpMenu( w, 48 @ 16 )
+		.items_( (1..16) ++ [ \off ] )
+		.action_({ |pu|
+			var ch, midiChannels;
+			switch( pu.value,
+				16, { ch = 'off' },
+				{ ch = pu.value }
+			);
+			midiChannels = evt.localSetting.midiChannels;
+			if( ch == manual ) {
+				if( midiChannels.size > manual ) {
+					midiChannels[ manual ] = nil;
+					while { midiChannels.last == nil && { midiChannels.size > 0 } } {
+						midiChannels.pop
+					};
+					if( midiChannels.size == 0 ) { midiChannels = nil; }
+				};
+			} {
+				if( midiChannels.size <= manual ) {
+					midiChannels = (midiChannels ?? {[]}).extend( manual+1, nil );
+				};
+				midiChannels[ manual ] = ch;
+			};
+			evt.localSetting.midiChannels = midiChannels;
+			evt.changed( \localSetting, \channel );
+		});
+		vws.setChannel = { |evx|
+			var val;
+			val = (evt.localSetting.midiChannels ?? {[]})[ manual ] ? manual;
+			switch( val,
+				\off, { val = 16 },
+			);
+			evx.channel.value = val;
+		};
+		vws.setChannel;
+		if( ( manual % 4 ) == 3 ) { w.asView.decorator.nextLine; };
+		vws;
+	});
+
+	ctrl = SimpleController( evt )
+	.put( \localSetting, { |obj, msg, type|
+		{
+			if( [ nil, \filter ].includes( type ) ) { views.setFilter; };
+			views.manuals.do({ |man|
+				if( [ nil, \channel ].includes( type ) ) { man.setChannel; };
+			})
+		}.defer;
+	});
+
+	w.onClose_({ ctrl.remove });
+
+	evt.lcWin = w;
+	evt.lcViews = views;
+};
+
 );
 
 /*
+~organ_sync.makeWindow;
 
 ~organ_sync.makeRemoteMappingWindow;
+
+~organ_sync.makeLocalMappingWindow;
 
 ~organ_sync.remoteSettings[ \Pi ]
 
