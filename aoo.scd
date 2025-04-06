@@ -355,7 +355,7 @@
 		evt.sortKnownPeers;
 	});
 
-	views[ \remove ] = Button( w, 100@20 )
+	views[ \remove ] = Button( w, 204@20 )
 	.states_([["remove inactive"]])
 	.resize_( 7 )
 	.action_({
