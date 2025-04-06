@@ -153,14 +153,29 @@
 	.resize_(7).string_( "MIDI mapping:").align_( \right );
 
 	Button( w, 152 @ 20 )
-	.states_([[ "to remote" ]])
+	.states_([[ "remote mapping" ]])
 	.resize_(7)
 	.action_({ evt.makeRemoteMappingWindow; });
 
 	views[ \local_mapping ] = Button( w, 152 @ 20 )
-	.states_([[ "local" ]])
+	.states_([[ "local mapping" ]])
 	.resize_(7)
 	.action_({ evt.makeLocalMappingWindow; });
+
+	w.asView.decorator.nextLine;
+
+	StaticText( w, 100@20 )
+	.resize_(7).string_( "End all notes:").align_( \right );
+
+	Button( w, 152 @ 20 )
+	.states_([[ "remote panic" ]])
+	.resize_(7)
+	.action_({ evt.remoteEndAllNotes; });
+
+	Button( w, 152 @ 20 )
+	.states_([[ "local panic" ]])
+	.resize_(7)
+	.action_({ evt.localEndAllNotes; });
 
 	w.asView.decorator.nextLine;
 
@@ -175,8 +190,7 @@
 		evt.makeMIDIOut;
 	});
 
-	w.asView.decorator.nextLine;
-	w.asView.decorator.shift( 312 );
+	w.asView.decorator.shift( 312 - 208 );
 
 	Button( w, 100 @ 20 )
 	.states_([[ "save" ]])
