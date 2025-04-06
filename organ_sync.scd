@@ -152,6 +152,12 @@
 	});
 };
 
+~organ_sync.remoteEndAllNotes = { |evt|
+	evt.aoo.client.peers.do({ |peer|
+		evt.sendRemoteMsg( peer, \endAll );
+	});
+};
+
 // -------- local: -------------
 
 ~organ_sync.makeMIDIOut = { |evt|
@@ -280,6 +286,13 @@
 	);
 };
 
+
+~organ_sync.localEndAllNotes = { |evt| // "panic"
+	evt.localSetting.manuals.do({ |manual|
+		evt.sendLocalNote( manual, (1..127), 0 );
+	});
+};
+
 // -------- oscfuncs: -------------
 
 ~organ_sync.makeOSCFuncs = { |evt|
@@ -290,6 +303,7 @@
 		[ '/sysex', \sendLocalSysEx, \sysex ],
 		[ '/midi', \sendLocalMIDI, \midi ],
 		[ '/osc', \sendLocalOSC, \osc ],
+		[ '/endAll', \localEndAllNotes, \endAll ],
 	].do({ |arr|
 		var key, cmd, type;
 		#key, cmd, type = arr;
@@ -301,6 +315,7 @@
 				if( ( filter !? _.includes( type ) ? false ).not ) {
 					SystemClock.schedAbs( time + ( knownPeer.latency ? 0 ), { |t|
 						evt.perform( cmd, *msg[1..] );
+						nil;
 					});
 				};
 			};
@@ -309,7 +324,7 @@
 };
 
 ~organ_sync.removeOSCFuncs = { |evt|
-	[ '/note', '/cc', '/program', '/sysex', '/midi', '/osc', ].do({ |key|
+	[ '/note', '/cc', '/program', '/sysex', '/midi', '/osc', '/endAll' ].do({ |key|
 		evt.aoo.removeOSCFunc( key )
 	});
 };
