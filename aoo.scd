@@ -265,11 +265,12 @@
 };
 
 ~aoo.findKnownPeer = { |evt, peer|
-	if( peer.isKindOf( AooPeer ) ) {
-		peer = peer.user.name.asSymbol;
-	} {
-		peer = peer.asSymbol;
+	case { peer.isKindOf( AooPeer ) } {
+		peer = peer.user.name;
+	} { peer.isKindOf( Integer ) } {
+		peer = evt.knownPeers[ peer ] ?? _.name ? peer;
 	};
+	peer = peer.asSymbol;
 	evt.knownPeers.detect({ |item|
 		item.name == peer;
 	});
