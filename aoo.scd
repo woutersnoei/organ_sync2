@@ -268,7 +268,7 @@
 	case { peer.isKindOf( AooPeer ) } {
 		peer = peer.user.name;
 	} { peer.isKindOf( Integer ) } {
-		peer = evt.knownPeers[ peer ] ?? _.name ? peer;
+		peer = evt.knownPeers[ peer ] !? _.name ? peer;
 	};
 	peer = peer.asSymbol;
 	evt.knownPeers.detect({ |item|
