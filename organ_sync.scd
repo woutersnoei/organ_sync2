@@ -431,6 +431,8 @@
 	OSCdef( 'organ_sync_local', { |msg|
 		var peer, type;
 		#peer, type = msg[[1,2]];
+		if( peer.isKindOf( String ) ) { peer = peer.asSymbol };
+		if( type.isKindOf( String ) ) { type = type.asSymbol };
 		switch( peer,
 			\local, {
 				evt.perform( typeList[ type ], *msg[3..] );
