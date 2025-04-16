@@ -78,7 +78,7 @@
 	if( (setting.filter ? #[]).includes( \note ).not ) {
 		numManuals = knownPeer.metadata !? { knownPeer.metadata.manuals ? 16 } ? 16;
 		midiChannels = setting.midiChannels ? #[];
-		if( settings.useLayers != false && {
+		if( setting.useLayers != false && {
 			knownPeer.metadata.layers.notNil && {
 				knownPeer.metadata.layers > 0
 			}
@@ -92,7 +92,7 @@
 					matchDevice.isNil or: { device == matchDevice }
 				}) {
 					func.value(
-						(manual / numLayers).floor + ((manual % numLayers)+1 * 0.1),
+						(manual / numLayers).floor + ((manual % numLayers) + 1 * 0.1),
 						setting
 					);
 				};
