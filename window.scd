@@ -27,6 +27,7 @@
 	.action_({ |pu|
 		evt.localSetting.mode = [ \osc, \midi, \off ][ pu.value ];
 		evt.changed( \localSetting, \mode );
+		evt.aoo.sendMetadata;
 	});
 
 	views[ \manuals ] = PopUpMenu( w, 125@20 )
@@ -38,21 +39,19 @@
 		evt.aoo.sendMetadata;
 	});
 
-	views[ \localThru ] = Button( w, 100@20 )
+	views[ \layers ] = PopUpMenu( w, 100@20 )
 	.resize_(7)
-	.states_([
-		[ "local thru", Color.black, Color.red(0.7).blend( Color.white, 0.7 ) ],
-		[ "local thru", Color.black, Color.green(0.7).blend( Color.white, 0.7 ) ]
-	])
-	.action_({ |bt|
-		evt.localSetting.localThru = bt.value.booleanValue;
-		evt.changed( \localSetting, \localThru );
+	.items_([ "no layers", "1 layer" ] ++ (2..9).collect({ |item| "% layers".format( item ) }) )
+	.action_({ |pu|
+		evt.localSetting.layers = ([nil] ++ (1..9))[ pu.value ];
+		evt.changed( \localSetting, \layers );
+		evt.aoo.sendMetadata;
 	});
 
 	StaticText( w, 100@20 )
 	.resize_(7).string_( "MIDI in:").align_( \right );
 
-	views[ \midiIn ] = PopUpMenu( w, 308@20 )
+	views[ \midiIn ] = PopUpMenu( w, 204@20 )
 	.resize_(7)
 	.action_({ |pu|
 		var item;
@@ -63,6 +62,17 @@
 			evt.localSetting.midiIn = nil;
 		};
 		evt.changed( \localSetting, \midiIn );
+	});
+
+	views[ \localThru ] = Button( w, 100@20 )
+	.resize_(7)
+	.states_([
+		[ "local thru", Color.black, Color.red(0.7).blend( Color.white, 0.7 ) ],
+		[ "local thru", Color.black, Color.green(0.7).blend( Color.white, 0.7 ) ]
+	])
+	.action_({ |bt|
+		evt.localSetting.localThru = bt.value.booleanValue;
+		evt.changed( \localSetting, \localThru );
 	});
 
 	w.asView.decorator.nextLine;
@@ -108,6 +118,7 @@
 	update = {
 		views[ \mode ].value_( [ \osc, \midi, \off ].indexOf( evt.localSetting.mode ) ? 2 );
 		views[ \manuals ].value_( evt.localSetting.manuals );
+		views[ \layers ].value_( evt.localSetting.layers ? 0 );
 		views[ \localThru ].value_( evt.localSetting.localThru.binaryValue ? 0 );
 
 		checkMIDI.( \midiIn, {
@@ -124,6 +135,7 @@
 
 		views[ \midiOut ].enabled = evt.localSetting.mode == \midi;
 		views[ \local_mapping ].enabled = evt.localSetting.mode == \midi;
+		views[ \layers ].enabled = evt.localSetting.mode == \osc;
 
 		checkMIDI.( \midiOut, {
 			views[ \midiOut ].value = views[ \midiOut ].items
@@ -237,6 +249,16 @@
 
 	evt.aoo.knownPeers.do({ |item|
 		var numManuals = item.metadata !? _.manuals ? 4;
+		var numLayers = item.metadata !? _.layers ? 0;
+		if( numLayers > 0 && { remoteSetting.( item.name ).useLayers != false  }) {
+			manualList = ([ "P" ] ++ (1..15).collect( "M" ++ _ )).collect({ |item|
+				numLayers.collect({ |layer|
+					item ++ "/L" ++ (layer+1);
+				});
+			}).flatten(1);
+		} {
+			manualList = [ "P" ] ++ (1..15).collect( "M" ++ _ );
+		};
 		views[ item.name ] = ();
 		StaticText( w, 104 @ 16 )
 		.string_( item.name )
@@ -269,7 +291,7 @@
 		};
 		views[ item.name ].setFilter;
 		w.asView.decorator.nextLine;
-		views[ item.name ][ \manuals ] = numManuals.collect({ |manual|
+		views[ item.name ][ \manuals ] = ( numManuals * numLayers.max(1) ).collect({ |manual|
 			var vws = ();
 			StaticText( w, 50 @ 16 )
 			.string_( manualList[ manual ] )

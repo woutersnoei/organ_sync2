@@ -12,11 +12,13 @@
 	midiChannels: [ 0,1,2,3 ], // local midi channels mapped to remote manuals
 	midiIn: nil, // local midi device mapped to manuals
 	filter: nil, // array of types to filter (i.e. not send)
+	useLayers: true, // use layers if available (nil == true)
 );
 
 ~organ_sync.localSetting = (
 	mode: \osc, // \midi, \osc, \off
 	manuals: 4,
+	layers: 4,
 	midiChannels: [ 0,1,2,3 ],
 	localThru: false,
 	midiIn: \all,
@@ -25,7 +27,10 @@
 );
 
 ~organ_sync.coupleMetadata = { |evt|
-	evt.aoo.metadata = { ( manuals: evt.localSetting.manuals ) };
+	evt.aoo.metadata = { (
+		manuals: evt.localSetting.manuals,
+		layers: if( evt.localSetting.mode == \osc ) { evt.localSetting.layers }
+	) };
 };
 
 // -------- initialization: -------------
@@ -67,22 +72,43 @@
 };
 
 ~organ_sync.routeRemoteNote = { |evt, peer, device, chan = 0, func|
-	var knownPeer, setting, numManuals, midiChannels;
+	var knownPeer, setting, numManuals, numLayers, midiChannels;
 	knownPeer = evt.aoo.findKnownPeer( peer );
 	setting = evt.remoteSettings[ peer.user.name.asSymbol ] ?? {()};
 	if( (setting.filter ? #[]).includes( \note ).not ) {
 		numManuals = knownPeer.metadata !? { knownPeer.metadata.manuals ? 16 } ? 16;
 		midiChannels = setting.midiChannels ? #[];
-		numManuals.do({ |manual|
-			var matchChannel, matchDevice;
-			matchChannel = midiChannels[ manual ] ? manual;
-			matchDevice = setting.device !? { |x| if( x.size > 0 ) { x[ manual ] } { x } } ? nil;
-			if( [ \all, chan ].includes( matchChannel ) && {
-				matchDevice.isNil or: { device == matchDevice }
-			}) {
-				func.value( manual, setting );
-			};
-		});
+		if( settings.useLayers != false && {
+			knownPeer.metadata.layers.notNil && {
+				knownPeer.metadata.layers > 0
+			}
+		}) {
+			numLayers = knownPeer.metadata.layers;
+			(numManuals * numLayers).do({ |manual|
+				var matchChannel, matchDevice;
+				matchChannel = midiChannels[ manual ] ? manual;
+				matchDevice = setting.device !? { |x| if( x.size > 0 ) { x[ manual ] } { x } } ? nil;
+				if( [ \all, chan ].includes( matchChannel ) && {
+					matchDevice.isNil or: { device == matchDevice }
+				}) {
+					func.value(
+						(manual / numLayers).floor + ((manual % numLayers)+1 * 0.1),
+						setting
+					);
+				};
+			});
+		} {
+			numManuals.do({ |manual|
+				var matchChannel, matchDevice;
+				matchChannel = midiChannels[ manual ] ? manual;
+				matchDevice = setting.device !? { |x| if( x.size > 0 ) { x[ manual ] } { x } } ? nil;
+				if( [ \all, chan ].includes( matchChannel ) && {
+					matchDevice.isNil or: { device == matchDevice }
+				}) {
+					func.value( manual, setting );
+				};
+			});
+		}
 	};
 };
 
@@ -177,12 +203,16 @@
 };
 
 ~organ_sync.sendLocalNote = { |evt, manual = 0, nn = 64, velo = 127, dur| // nn can be Array
-	var chan, auxChan;
+	var chan, auxChan, layer;
 	switch( evt.localSetting.mode,
 		\osc, {
-			~bo.note( manual, nil, nn, velo, dur );
+			layer = (manual.frac * 10).round(1).asInteger;
+			if( layer == 0 ) { layer = nil };
+			manual = manual.asInteger;
+			~bo.note( manual, layer, nn, velo, dur );
 		},
 		\midi, {
+			manual = manual.asInteger;
 			chan = (evt.localSetting.midiChannels ? #[])[ manual ] ? manual;
 			if( chan.notNil ) {
 				if( nn.isArray ) {
