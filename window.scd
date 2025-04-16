@@ -224,19 +224,12 @@
 
 ~organ_sync.makeRemoteMappingWindow = { |evt|
 	var w, views = (), update, filterList, ctrl;
-	var manualList, remoteSetting, numManuals;
+	var manualList, remoteSetting, numManuals, getNumLayers;
 	var windowHeight, windowBounds = Rect(200,200, 420, 400);
 	if( evt.rmWin.notNil && { evt.rmWin.isClosed.not } ) {
 		windowBounds = evt.rmWin.bounds;
 		evt.rmWin.close;
 	};
-	windowBounds.height = evt.aoo.knownPeers.collect({ |item|
-		((item.metadata !? _.manuals ? 4) * 20) + 20 + 20
-	}).sum - 6;
-	w = Window( "to remote MIDI mapping", windowBounds, false ).front;
-	w.addFlowLayout;
-
-	manualList = [ "P" ] ++ (1..15).collect( "M" ++ _ );
 
 	remoteSetting = { |name|
 		if( evt.remoteSettings[ name ].isNil ) {
@@ -245,15 +238,31 @@
 		evt.remoteSettings[ name ];
 	};
 
+	getNumLayers = { |knownPeer|
+		if( remoteSetting.( knownPeer.name ).useLayers != false ) {
+			(knownPeer.metadata !? _.layers ? 1).max(1)
+		} {
+			1
+		}
+	};
+
+	windowBounds.height = evt.aoo.knownPeers.collect({ |item|
+		((item.metadata !? _.manuals ? 4) * getNumLayers.(item) * 20) + 20 + 20
+	}).sum - 6;
+	w = Window( "to remote MIDI mapping", windowBounds, false ).front;
+	w.addFlowLayout;
+
+	manualList = [ "P" ] ++ (1..15).collect( "M" ++ _ );
+
 	filterList = [ \note, \cc, \program, \sysex ];
 
 	evt.aoo.knownPeers.do({ |item|
 		var numManuals = item.metadata !? _.manuals ? 4;
-		var numLayers = item.metadata !? _.layers ? 0;
-		if( numLayers > 0 && { remoteSetting.( item.name ).useLayers != false  }) {
+		var numLayers = getNumLayers.(item);
+		if( numLayers > 1 ) {
 			manualList = ([ "P" ] ++ (1..15).collect( "M" ++ _ )).collect({ |item|
 				numLayers.collect({ |layer|
-					item ++ "/L" ++ (layer+1);
+					"% / L%".format( item, layer+1 );
 				});
 			}).flatten(1);
 		} {
