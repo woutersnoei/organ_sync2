@@ -2,7 +2,7 @@
 
 ~organ_sync.remoteSettings = ();
 
-~organ_sync.sendLatency = 0.02; // 0.02 seems safe in most circumstances
+~organ_sync.sendLatency = 0.05; // 0.02 seems safe in most circumstances
 
 ~organ_sync.checkManuals = true;
 
