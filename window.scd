@@ -246,7 +246,7 @@
 		}
 	};
 
-	windowBounds.height = evt.aoo.knownPeers.collect({ |item|
+	windowBounds.height = (evt.aoo.knownPeers ? []).collect({ |item|
 		((item.metadata !? _.manuals ? 4) * getNumLayers.(item) * 20) + 20 + 20
 	}).sum - 6;
 	w = Window( "to remote MIDI mapping", windowBounds, false ).front;
