@@ -33,6 +33,12 @@
 	) };
 };
 
+~aoo.formatMetaDataFunc = { |md|
+	if( md.notNil ) {
+		"%M%".format( md[ \manuals ], md[ \layers ] !? "/%L".format(_) ? ""  )
+	} { "" };
+};
+
 // -------- initialization: -------------
 
 ~organ_sync.init = { |evt|

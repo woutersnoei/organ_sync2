@@ -15,6 +15,8 @@
 
 ~aoo.verbose = true;
 
+~aoo.formatMetaDataFunc = { |md| (md ? "").asString };
+
 ~aoo.connect = { |evt, action, freeFirst = true|
 	if( evt.userName.size > 0 ) {
 		s.waitForBoot({
@@ -525,7 +527,7 @@
 				vws[ \txt ].string = " % (%) % rtt: %ms, late: %".format(
 					peer.name,
 					peer.id,
-					peer.metadata ? "",
+					evt[ \formatMetaDataFunc ].value( peer.metadata ),
 					peer.maxRTT !? (_ * 1000).round(0.1) ? "-",
 					peer.lates ? "-"
 				);
