@@ -410,7 +410,7 @@
 				MenuAction.separator( " % (%) %".format(
 					item.name,
 					item.id,
-					item.metadata ? ""
+					evt[ \formatMetaDataFunc ].value( item.metadata )
 				) ),
 				MenuAction( "Send", { |act, bool|
 					item.send = bool;
