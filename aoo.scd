@@ -534,11 +534,11 @@
 			var peer;
 			peer = evt.knownPeers[i];
 			if( peer !? _.active ? false == true ) {
-				vws[ \txt ].string = " % (%) % rtt: %ms, late: %".format(
+				vws[ \txt ].string = " % % rtt: %/%ms, late: %".format(
 					peer.name,
-					peer.id,
 					evt[ \formatMetaDataFunc ].value( peer.metadata ),
-					peer.maxRTT !? (_ * 1000).round(0.1) ? "-",
+					peer.rtt !? (_ * 1000).round(1).asInteger ? "-",
+					peer.maxRTT !? (_ * 1000).round(1).asInteger ? "-",
 					peer.lates ? "-"
 				);
 				vws[ \txt ].stringColor = Color.black;
