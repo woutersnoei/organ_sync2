@@ -372,6 +372,7 @@
 	.resize_( 7 )
 	.action_({
 		evt.resetRTT;
+		evt.changed( \knownPeersActive );
 	});
 
 	fillPeers = {
@@ -390,12 +391,21 @@
 				evt.menuDeepDestroy( menu );
 				removeMenu = nil;
 			});
-			vws[ \txt ] = StaticText( vws[ \comp ], (vws[ \comp ].bounds.width - 40) @ 20 )
+			vws[ \txt ] = StaticText( vws[ \comp ], (vws[ \comp ].bounds.width - 90) @ 20 )
 			.resize_(5)
 			.background_( Color.hsv(
 				(item.name.hash % 2048).linlin( 0,2048, 0.0, 1.0 ), 0.1, 0.7 )
 			)
 			.string_( " % (%)".format( item.name, item.id ) );
+			vws[ \latency ] = NumberBox( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 90, 0, 50, 20 ) )
+			.resize_(6)
+			.step_(0.001)
+			.scroll_step_(0.001)
+			.align_( \center )
+			.minDecimals_( 3 )
+			.maxDecimals_( 3 )
+			.value_( item.latency ? 0 )
+			.action_({ |nb| item.latency = nb.value; });
 			vws[ \send ] = StaticText( vws[ \comp ], Rect( vws[ \comp ].bounds.width - 20, 0, 20, 20 ) )
 			.resize_(6)
 			.string_( "s" )
@@ -533,6 +543,7 @@
 				);
 				vws[ \txt ].stringColor = Color.black;
 				vws.setRemoveEnabled( false );
+				vws[ \latency ].value = peer.latency ? 0;
 			} {
 				vws[ \txt ].stringColor = Color.red;
 				vws.setRemoveEnabled( true );
