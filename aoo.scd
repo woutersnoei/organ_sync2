@@ -441,6 +441,9 @@
 				})
 				.checked_( true ),
 				MenuAction.separator,
+				MenuAction( "Use estimated latency", {
+					item.latency = item.delta2 + 0.01 - 0.05;
+				}),
 				MenuAction( "Reset lates", { item.lates = nil }),
 				MenuAction( "Plot time offsets...", { item.recvOffsets !? _.plot }),
 				MenuAction.separator,
