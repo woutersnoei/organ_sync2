@@ -13,7 +13,7 @@
 
 ~aoo.reliable = false; // message sending mode, false is probably ok
 
-~aoo.verbose = true;
+~aoo.verbose = false;
 
 ~aoo.formatMetaDataFunc = { |md| (md ? "").asString };
 
@@ -94,7 +94,7 @@
 		knownPeer.recvOffsets = knownPeer.recvOffsets.add( timeOffset );
 		if( timeOffset < 0 ) {
 			knownPeer.lates = (knownPeer.lates ? 0) + 1;
-			if( evt.verbose == true ) { "late: %, %, %\n".postf( timeOffset, peer, obj ) };
+			"late: %, %, %\n".postf( timeOffset, peer, obj );
 		};
 		if( knownPeer.recvOffsets.size > 1024 ) {
 			knownPeer.recvOffsets = knownPeer.recvOffsets[ knownPeer.recvOffsets.size - 1024 ..];
