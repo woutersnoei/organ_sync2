@@ -492,14 +492,21 @@
 			.put( \received, {
 				if( rTask.isNil ) {
 					rTask = {
+						var amt;
 						while {
-							item.received == true
+							item.received.binaryValue > 0
 						} {
-							item.received = false;
-							if( vws[ \receive ].isClosed.not ) {
-								vws[ \receive ].background_( Color.green );
+							if( item.received.isKindOf( Boolean ) ) {
+								item.received = 1.0;
 							};
-							0.25.wait;
+							amt = item.received;
+							item.received = (item.received - 0.2).max(0);
+							if( vws[ \receive ].isClosed.not ) {
+								vws[ \receive ].background_(
+									Color.white.blend( Color.green, amt );
+								);
+							};
+							0.1.wait;
 						};
 						if( vws[ \receive ].isClosed.not ) {
 							vws[ \receive ].background_( Color.clear );
