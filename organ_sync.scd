@@ -239,6 +239,16 @@
 	);
 };
 
+~organ_sync.sendLocalNoteThru = { |evt, chan = 0, nn = 64, velo = 127|
+	var layer, manual;
+	if( evt.localSetting.mode == \osc && { evt.localSetting.layers.notNil } ) {
+		manual = (chan / evt.localSetting.layers).floor;
+		layer = chan.wrap(0, evt.localSetting.layers - 1 ) + 1;
+		chan = manual + (layer / 10);
+	};
+	evt.sendLocalNote( chan, nn, velo );
+};
+
 ~organ_sync.sendLocalCC = { |evt, chan = 0, cc = 0, val = 64|
 	switch( evt.localSetting.mode,
 		\osc, {
@@ -419,14 +429,14 @@
 	MIDIdef.noteOn( "%_%".format( evt.aoo.port, \noteOn ).asSymbol, { |val, num, chan, uid|
 		evt.midiRespond( uid,
 			{ |device| evt.sendRemoteNote( device, chan, num, val ); },
-			{ evt.sendLocalNote( chan, num, val ); }
+			{ evt.sendLocalNoteThru( chan, num, val ); }
 		);
 	});
 
 	MIDIdef.noteOff( "%_%".format( evt.aoo.port, \noteOff ).asSymbol, { |val, num, chan, uid|
 		evt.midiRespond( uid,
 			{ |device| evt.sendRemoteNote( device, chan, num, 0 );},
-			{ evt.sendLocalNote( chan, num, 0 ); }
+			{ evt.sendLocalNoteThru( chan, num, 0 ); }
 		);
 	});
 
