@@ -419,8 +419,10 @@
 	device = evt.midiDict.in.device[ uid ] ? uid;
 	if( evt.localSetting.midiIn == \all or: {
 		evt.localSetting.midiIn.asArray.includes( device );
-	} ) { remoteFunc.value( device ) };
-	if( evt.localSetting.localThru == true, localFunc );
+	} ) {
+		remoteFunc.value( device );
+		if( evt.localSetting.localThru == true, localFunc );
+	};
 };
 
 ~organ_sync.makeMIDIFuncs = { |evt|
