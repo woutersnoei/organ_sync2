@@ -59,7 +59,11 @@
 		if( item.isKindOf( Symbol ) ) {
 			evt.localSetting.midiIn = item;
 		} {
-			evt.localSetting.midiIn = nil;
+			if( item == "multiple..." ) {
+				evt.makeMIDIInWindow;
+			} {
+				evt.localSetting.midiIn = nil;
+			};
 		};
 		evt.changed( \localSetting, \midiIn );
 	});
@@ -103,9 +107,13 @@
 
 	updateMIDI = {
 		checkMIDI.( \midiIn, {
-			views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ "none (off)" ] );
+			views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ "multiple...", "none (off)" ] );
 		}, {
-			views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ evt.localSetting.midiIn, "none (off)" ] );
+			if( evt.localSetting.midiIn.size > 1 ) {
+				views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ "multiple...", "none (off)" ] );
+			} {
+				views[ \midiIn ].items_( [ \all ] ++ evt.midiDict.in.list ++ [ evt.localSetting.midiIn, "multiple...", "none (off)" ] );
+			};
 		});
 
 		checkMIDI.( \midiOut, {
@@ -123,14 +131,24 @@
 
 		checkMIDI.( \midiIn, {
 			views[ \midiIn ].value = views[ \midiIn ].items
-			.indexOf( evt.localSetting.midiIn ) ?? { views[ \midiIn ].items.size - 1 };
+			.indexOf( evt.localSetting.midiIn ) ?? {
+				if( evt.localSetting.midiIn.size > 1 ) {
+					views[ \midiIn ].items.size - 2;
+				} {
+					views[ \midiIn ].items.size - 1;
+				};
+			};
 			views[ \midiIn ].stringColor = nil;
 		}, {
-			if( views[ \midiIn ].items.includes( evt.localSetting.midiIn ).not ) {
-				updateMIDI.value;
+			if( evt.localSetting.midiIn.size > 1 ) {
+				views[ \midiIn ].value = views[ \midiIn ].items.size - 2;
+			} {
+				if( views[ \midiIn ].items.includes( evt.localSetting.midiIn ).not ) {
+					updateMIDI.value;
+				};
+				views[ \midiIn ].value = views[ \midiIn ].items.indexOf( evt.localSetting.midiIn );
+				views[ \midiIn ].stringColor = Color.red;
 			};
-			views[ \midiIn ].value = views[ \midiIn ].items.indexOf( evt.localSetting.midiIn );
-			views[ \midiIn ].stringColor = Color.red;
 		});
 
 		views[ \midiOut ].enabled = evt.localSetting.mode == \midi;
@@ -527,6 +545,77 @@
 	evt.lcViews = views;
 };
 
+~organ_sync.makeMIDIInWindow = { |evt|
+	var w, views, update, ctrl;
+	var action;
+	var windowBounds = Rect(626 ,128, 400, 400);
+
+	if( evt.midiInWin.notNil && { evt.midiInWin.isClosed.not } ) {
+		windowBounds = evt.midiInWin.bounds;
+		evt.midiInWin.close;
+	};
+
+	windowBounds.height = (MIDIClient.sources.size + 1.25) * 24;
+	w = Window( "MIDI in filter", windowBounds, false ).front;
+	w.addFlowLayout;
+
+	action = {
+		var boxes, indices;
+		boxes = views.collect(_.value);
+		case { boxes.every( _ == true) } {
+			evt.localSetting.midiIn = \all;
+		} { boxes.every(_ == false) } {
+			evt.localSetting.midiIn = nil;
+		} {
+			indices = boxes.selectIndices( _ == true );
+			if( indices.size == 1 ) {
+				evt.localSetting.midiIn = views[ indices[0] ].string.asSymbol;
+			} {
+				evt.localSetting.midiIn = views[ indices ].collect({ |item| item.string.asSymbol });
+			}
+		};
+		evt.changed( \localSetting );
+	};
+
+	Button( w, 100 @ 20 )
+	.states_([["all"]])
+	.action_({ views.do(_.value_(true)); action.value });
+	Button( w, 100 @ 20 )
+	.states_([["none"]])
+	.action_({ views.do(_.value_(false)); action.value });
+	views = MIDIClient.sources.collect({ |src|
+		CheckBox( w, 392 @ 20, "%/%".format( src.device, src.name ) )
+		.action_( action );
+	});
+
+	update = {
+		var list;
+		case { evt.localSetting.midiIn == \all } {
+			views.do(_.value_( true ))
+		} { evt.localSetting.midiIn == nil } {
+			views.do(_.value_( false ))
+		} {
+			list = evt.localSetting.midiIn.asArray;
+			views.do({ |vw|
+				if( list.includes( vw.string.asSymbol ) ) {
+					vw.value = true;
+				} {
+					vw.value = false;
+				};
+			});
+		};
+	};
+
+	ctrl = SimpleController( evt )
+	.put( \localSetting, { |obj, msg, which, type|
+		{ update.value; }.defer;
+	});
+
+	w.onClose_({ ctrl.remove });
+
+	evt.midiInWin = w;
+	evt.midiInViews = views;
+};
 );
 
 /*
