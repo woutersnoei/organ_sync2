@@ -53,6 +53,7 @@
 
 	views[ \midiIn ] = PopUpMenu( w, 204@20 )
 	.resize_(7)
+	.allowsReselection_( true )
 	.action_({ |pu|
 		var item;
 		item = pu.item;
