@@ -37,8 +37,6 @@ if( (~organ_sync.filePath +/+ "aoo test.scd").load == true ) {
 			~organ_sync.aoo.sendMsg( nil, 0.0, [ '/post', "lates", item.lates ? 0 ] );
 		});
 	}, '/request_lates' );
-
-	~organ_sync.makeLocalOSCFunc;
 };
 
 )

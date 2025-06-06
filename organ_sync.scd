@@ -57,6 +57,7 @@
 	evt.makeOSCFuncs;
 	evt.makeWindow;
 	evt.makeMIDIOut;
+	evt.makeLocalOSCFunc;
 };
 
 // -------- remotes: -------------
