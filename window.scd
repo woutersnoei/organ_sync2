@@ -4,7 +4,7 @@
 	if( evt.win.notNil && { evt.win.isClosed.not } ) {
 		evt.win.close;
 	};
-	w = Window( "organ_sync", Rect(200,200, 420, 400) ).front;
+	w = Window( evt.envirName.asString, Rect(200,200, 420, 400) ).front;
 	w.asView.minWidth_( 420 ).maxWidth_(420).minHeight_( 456 );
 	w.addFlowLayout;
 

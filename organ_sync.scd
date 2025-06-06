@@ -8,6 +8,8 @@
 
 ~organ_sync.verbose = true;
 
+~organ_sync.envirName = { |evt| currentEnvironment.findKeyForValue( evt ) };
+
 ~organ_sync.remoteSettings[ \Pi ] = (
 	midiChannels: [ 0,1,2,3 ], // local midi channels mapped to remote manuals
 	midiIn: nil, // local midi device mapped to manuals
@@ -42,9 +44,14 @@
 // -------- initialization: -------------
 
 ~organ_sync.init = { |evt|
-	evt.aoo =  evt.aoo ?? { ().parent_( ~aoo ); };
+	evt.aoo = evt.aoo ?? { ().parent_( ~aoo ); };
 	evt.coupleMetadata;
 	evt.loadSettings;
+	if( (~organ_sync.usedPorts ? []).includes( evt.aoo.port ) ) {
+		evt.aoo.port = ~organ_sync.usedPorts.last + 1;
+		"using port %\n".postf( evt.aoo.port );
+	};
+	~organ_sync.usedPorts = ~organ_sync.usedPorts.add( evt.aoo.port ).sort;
 	evt.aoo.connect;
 	evt.makeMIDIFuncs;
 	evt.makeOSCFuncs;
@@ -476,7 +483,7 @@
 		'midi': 'sendLocalMIDI',
 		'endAll': 'localEndAllNotes'
 	);
-	OSCdef( 'organ_sync_local', { |msg|
+	OSCdef( "%_local".format( evt.envirName ).asSymbol, { |msg|
 		var peer, type;
 		#peer, type = msg[[1,2]];
 		if( peer.isKindOf( String ) ) { peer = peer.asSymbol };
@@ -493,7 +500,7 @@
 				evt.sendRemoteMsg( peer, type, *msg[3..] );
 			}
 		);
-	}, '/organ_sync' );
+	}, "/%".format( evt.envirName ).asSymbol );
 };
 
 // -------- store/read settings: -------------
@@ -518,10 +525,7 @@
 
 
 ~organ_sync.settingsPath = { |evt|
-	"%/%_settings.scd".format(
-		Platform.userAppSupportDir,
-		currentEnvironment.findKeyForValue( evt );
-	)
+	"%/%_settings.scd".format( Platform.userAppSupportDir, evt.envirName )
 };
 
 ~organ_sync.storeSettings = { |evt|
