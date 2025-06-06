@@ -516,7 +516,13 @@
 	};
 };
 
-~organ_sync.settingsPath = Platform.userAppSupportDir +/+ "organ_sync_settings.scd";
+
+~organ_sync.settingsPath = { |evt|
+	"%/%_settings.scd".format(
+		Platform.userAppSupportDir,
+		currentEnvironment.findKeyForValue( evt );
+	)
+};
 
 ~organ_sync.storeSettings = { |evt|
 	File.use( evt.settingsPath, "w", { |f|
